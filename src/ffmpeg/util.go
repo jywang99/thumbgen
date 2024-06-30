@@ -7,7 +7,10 @@ import (
 	"path"
 
 	"jy.org/videop/src/config"
+	"jy.org/videop/src/logging"
 )
+
+var logger = logging.Logger
 
 // list of cut start points
 // evenly distribute cuts

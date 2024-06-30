@@ -1,7 +1,6 @@
 package ffmpeg_test
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -22,7 +21,6 @@ func TestPath(t *testing.T) {
 
 func TestGenPreviewGif(t *testing.T) {
     ff := ffmpeg.NewFfmpeg()
-    path, err := ff.GenPreviewGif(path.Join(testDir, "res/file_example_MP4_1280_10MG.mp4"), path.Join(testDir, "out/test.gif"))
-    fmt.Println(path)
+    err := ff.GenPreviewGif(path.Join(testDir, "res/file_example_MP4_1280_10MG.mp4"), path.Join(os.Getenv("OUTPUT_DIR"), "test.gif"))
     assert.Nil(t, err)
 }

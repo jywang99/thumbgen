@@ -30,20 +30,24 @@ func NewFfmpeg() *Ffmpeg {
     }
 }
 
-func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) (string, error) {
-    log.Println("Generating preview gif for", inFile, "to", outFile)
+func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) error {
+    if _, err := os.Stat(outFile); err == nil {
+        return nil
+    }
+
+    logger.INFO.Println("Generating preview gif for", inFile, "to", outFile)
 
     // make tmp dir
     tmpDir, err := mkTmpDir(inFile)
     defer os.RemoveAll(tmpDir)
     if err != nil {
-        return "", err
+        return err
     }
 
     // get duration
     duration, err := f.getDuration(inFile)
     if err != nil {
-        return "", err
+        return err
     }
 
     // get gifs for each cut, save in tmp dir
@@ -53,21 +57,23 @@ func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) (string, error) {
         gif := path.Join(tmpDir, "range" + strconv.Itoa(i) + ".gif")
         err := f.genGif(inFile, gif, start)
         if err != nil {
-            return "", err
+            return err
         }
         gifs[i] = gif
     }
 
     // combine gifs
-    final, err := f.combineGifs(gifs, outFile)
+    err = f.combineGifs(gifs, outFile)
     if err != nil {
-        return "", err
+        return err
     }
-    return final, nil
+
+    return nil
 }
 
 // example: ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 /mnt/f/MetalBondage/mb218.mp4
 func (f *Ffmpeg) getDuration(file string) (float64, error) {
+    logger.INFO.Println("Getting duration for", file)
     cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", file)
     out, err := execCmd(cmd)
     if err != nil {
@@ -86,6 +92,7 @@ func (f *Ffmpeg) getDuration(file string) (float64, error) {
 
 // example: fmpeg -i /mnt/f/MetalBondage/mb218.mp4 -ss 00:00:00 -t 5 -vf "fps=20,scale=320:-1:flags=lanczos" -c:v pam -f image2pipe - | convert -delay 2 -loop 0 - range1.gif
 func (f *Ffmpeg) genGif(input string, output string, start float64) error {
+    logger.INFO.Println("Generating gif for", input, "to", output, "starting at", start)
     cmd := exec.Command("sh", "-c",
         strings.Join([]string{
             "ffmpeg", 
@@ -104,7 +111,8 @@ func (f *Ffmpeg) genGif(input string, output string, start float64) error {
 }
 
 // example: convert -delay 5 -loop 0 range1.gif range2.gif combined.gif
-func (f *Ffmpeg) combineGifs(gifs []string, outGif string) (string, error) {
+func (f *Ffmpeg) combineGifs(gifs []string, outGif string) error {
+    logger.INFO.Println("Combining gifs to", outGif)
     args := []string{"convert", "-delay", "5", "-loop", "0"}
     for _, gif := range gifs {
         args = append(args, gif)
@@ -115,9 +123,9 @@ func (f *Ffmpeg) combineGifs(gifs []string, outGif string) (string, error) {
     _, err := execCmd(cmd)
     if err != nil {
         log.Println("combineGifs command error")
-        return "", err
+        return err
     }
 
-    return outGif, nil
+    return nil
 }
 
