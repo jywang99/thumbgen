@@ -8,7 +8,10 @@ import (
 
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
+	"jy.org/videop/src/logging"
 )
+
+var logger = logging.Logger
 
 type directories struct {
     Input string
@@ -17,9 +20,14 @@ type directories struct {
     Ignore map[string]bool
 }
 
+type files struct {
+    TargetExts map[string]bool
+    DotFiles bool
+}
+
 type config struct {
     Dirs directories
-    TargetExts map[string]bool
+    Files files
 }
 
 var basePath = "/soft/video-prep/config/"
@@ -56,11 +64,13 @@ func initConfig() config {
         Input: os.Getenv("INPUT_DIR"),
         Output: os.Getenv("OUTPUT_DIR"),
         Temp: os.Getenv("TEMP_DIR"),
-        Ignore: make(map[string]bool),
+        Ignore: stringToMap(os.Getenv("IGNORE_DIRS")),
     }
-
-    cfg.Dirs.Ignore = stringToMap(os.Getenv("IGNORE_DIRS"))
-    cfg.TargetExts = stringToMap(os.Getenv("TARGET_EXT"))
+    cfg.Files = files{
+        DotFiles: os.Getenv("DOT_FILES") == "1",
+        TargetExts: stringToMap(os.Getenv("TARGET_EXT")),
+    }
+    logger.INFO.Printf("Config: %v\n", cfg)
 
     return cfg
 }

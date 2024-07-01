@@ -12,14 +12,23 @@ import (
 var logger = logging.Logger
 var cfg = config.Config
 
-func WalkAndDo(path string, doForFile, doForDir func(string) error) error {
+func WalkAndDo(path string, doForFile func(string), doForDir func(string) error) error {
     ignore := cfg.Dirs.Ignore
-    targets := cfg.TargetExts
+    targets := cfg.Files.TargetExts
     err := filepath.Walk(config.Config.Dirs.Input, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
             logger.ERROR.Printf("Error when walking through the directory: %v\n", err)
 			return nil
 		}
+
+        // ignore dot files
+        if !cfg.Files.DotFiles && strings.HasPrefix(filepath.Base(path), ".") {
+            logger.INFO.Printf("Skipping dot file: %v\n", path)
+            if info.IsDir() {
+                return filepath.SkipDir
+            }
+            return nil
+        }
 
         if info.IsDir() {
             if ignore[filepath.Base(path)] {
@@ -32,10 +41,7 @@ func WalkAndDo(path string, doForFile, doForDir func(string) error) error {
         ext := filepath.Ext(path)
         if len(ext) > 0 && targets[ext[1:]] {
             logger.INFO.Printf("Processing file: %v\n", path)
-            err := doForFile(path)
-            if err != nil {
-                logger.ERROR.Printf("Error when generating preview gif: %v\n", err)
-            }
+            doForFile(path)
         }
 
 		return nil

@@ -68,6 +68,7 @@ func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) error {
         return err
     }
 
+    logger.INFO.Printf("Generated preview gif for %v\n", inFile)
     return nil
 }
 
