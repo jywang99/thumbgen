@@ -1,6 +1,8 @@
 package main
 
 import (
+	"path"
+
 	"jy.org/videop/src/config"
 	"jy.org/videop/src/ffmpeg"
 	"jy.org/videop/src/files"
@@ -14,24 +16,36 @@ func main() {
     logger.INFO.Println("Start of the program")
 
     cfg := config.Config
-    ff := ffmpeg.NewFfmpeg()
+    ff := ffmpeg.NewFfmpeg(cfg.Ffmpeg)
 
     err := files.WalkAndDo(cfg.Dirs.Input, 
-    func(path string) {
-        logger.INFO.Printf("[Generation start] source: %v\n", path)
-        tpath, err := files.GetTargetFile(path)
+    func(file string) {
+        logger.INFO.Printf("[Generation start] source: %v\n", file)
+        tdir, err := files.MkTargetDir(file)
         if err != nil {
             return
         }
-        err = ff.GenPreviewGif(path, tpath)
+        err = ff.GenPreviewGif(file, path.Join(tdir, "preview.gif"))
         if err != nil {
             logger.ERROR.Printf("[Generation end][ERROR] %v\n", err)
             return
         }
+        // TODO generate img
+        logger.INFO.Printf("[Generation end][ok] output: %v\n", tdir)
+    }, 
+    func(dir string) {
+        logger.INFO.Printf("[Generation start] source: %v/\n", dir)
+        tpath, err := files.MkTargetDir(dir)
+        if err != nil {
+            return
+        }
+        // TODO generate gif
+        // TODO generate img
         logger.INFO.Printf("[Generation end][ok] output: %v\n", tpath)
     }, 
-    func(path string) error {
-        err := files.MkTargetDir(path)
+    func(dir string) error {
+        logger.INFO.Printf("Processing directory: %v/\n", dir)
+        _, err := files.MkTargetDir(dir)
         if err != nil {
             logger.ERROR.Printf("Error when creating target directory: %v\n", err)
             return err

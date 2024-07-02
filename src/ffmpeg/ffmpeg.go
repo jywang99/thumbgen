@@ -8,30 +8,21 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"jy.org/videop/src/config"
 )
 
 type Ffmpeg struct {
-    playbackSpeed float64
-    cutDuration float64
-    maxCuts int
-    scaleWidth int
-    scaleHeight int
-    fps int
+    cfg config.FfmpegCfg
 }
 
-func NewFfmpeg() *Ffmpeg {
-    return &Ffmpeg{
-        playbackSpeed: 2.0,
-        cutDuration: 5,
-        maxCuts: 5,
-        scaleWidth: 320,
-        scaleHeight: -1,
-        fps: 20,
-    }
+func NewFfmpeg(cfg config.FfmpegCfg) *Ffmpeg {
+    return &Ffmpeg{cfg: cfg}
 }
 
 func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) error {
     if _, err := os.Stat(outFile); err == nil {
+        logger.INFO.Printf("Preview gif already exists for %v: %v\n", inFile, outFile)
         return nil
     }
 
@@ -51,7 +42,7 @@ func (f *Ffmpeg) GenPreviewGif(inFile string, outFile string) error {
     }
 
     // get gifs for each cut, save in tmp dir
-    starts := getCuts(duration, f.cutDuration, f.maxCuts)
+    starts := getCuts(duration, f.cfg.CutDuration, f.cfg.MaxCuts)
     gifs := make([]string, len(starts))
     for i, start := range starts {
         gif := path.Join(tmpDir, "range" + strconv.Itoa(i) + ".gif")
@@ -99,8 +90,8 @@ func (f *Ffmpeg) genGif(input string, output string, start float64) error {
             "ffmpeg", 
             "-i", fmt.Sprintf("'%s'", input),
             "-ss", strconv.FormatFloat(start, 'f', 0, 64), 
-            "-t", strconv.FormatFloat(f.cutDuration, 'f', 0, 64), 
-            "-vf", "fps=" + strconv.Itoa(f.fps) + ",scale=" + strconv.Itoa(f.scaleWidth) + ":" + strconv.Itoa(f.scaleHeight) + ":flags=lanczos", 
+            "-t", strconv.FormatFloat(f.cfg.CutDuration, 'f', 0, 64), 
+            "-vf", "fps=" + strconv.Itoa(f.cfg.Fps) + ",scale=" + strconv.Itoa(f.cfg.ScaleWidth) + ":" + strconv.Itoa(f.cfg.ScaleHeight) + ":flags=lanczos", 
             "-c:v", "pam", "-f", "image2pipe", "-",
             "|", "magick", "-delay", "2", "-loop", "0", "-", fmt.Sprintf("'%s'", output)}, " "))
     _, err := execCmd(cmd)

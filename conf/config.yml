@@ -1,0 +1,19 @@
+ffmpeg:
+  playbackSpeed: 2.0 # making this larger won't shorten cut duration
+  cutDuration: 3 # duration in seconds for each cut
+  maxCuts: 5 # max number of cuts per video (segments in gif)
+  scaleWidth: 320
+  scaleHeight: -1 # keep aspect ratio
+  fps: 20 # frames per second
+directories:
+  input: /mnt/f
+  output: /soft/video-prep/work/out
+  temp: /soft/video-prep/work/tmp
+  ignore: $RECYCLE.BIN:System Volume Information:.Trashes:.fseventsd:.Spotlight-V100:thumbs:models
+  maxDepth: 1 # max level to be treated as a directory
+    # example: when root is /mnt/f/ and maxDepth is 2, /mnt/f/a/b/ will be treated as a directory, but /mnt/f/a/b/c/ will be treated as a leaf node
+files:
+  videoExt: mp4:mkv:avi:mov:wmv:webm
+  imageExt: jpg:jpeg:png:gif
+  dotfiles: false
+

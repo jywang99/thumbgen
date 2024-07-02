@@ -14,26 +14,42 @@ import (
 var logger = logging.Logger
 
 type directories struct {
-    Input string
-    Output string
-    Temp string
-    Ignore map[string]bool
+    Input string `yaml:"input"`
+    Output string `yaml:"output"`
+    Temp string `yaml:"temp"`
+    IgnoreStr string `yaml:"ignore"`
+    IgnoreMap map[string]bool
+    MaxDepth int `yaml:"maxDepth"`
 }
 
 type files struct {
-    TargetExts map[string]bool
-    DotFiles bool
+    VideoExtStr string `yaml:"videoExt"`
+    VideoExtMap map[string]bool
+    ImageExtStr string `yaml:"imageExt"`
+    ImageExtMap map[string]bool
+    DotFiles bool `yaml:"dotfiles"`
+}
+
+type FfmpegCfg struct {
+    PlaybackSpeed float64 `yaml:"playbackSpeed"`
+    CutDuration float64 `yaml:"cutDuration"`
+    MaxCuts int `yaml:"maxCuts"`
+    ScaleWidth int `yaml:"scaleWidth"`
+    ScaleHeight int `yaml:"scaleHeight"`
+    Fps int `yaml:"fps"`
 }
 
 type config struct {
-    Dirs directories
-    Files files
+    Ffmpeg FfmpegCfg `yaml:"ffmpeg"`
+    Dirs directories `yaml:"directories"`
+    Files files `yaml:"files"`
 }
 
 var basePath = "/soft/video-prep/config/"
+var configPath = path.Join(basePath, "config.yml")
 
 func readYmlConfig(cfg *config) {
-    f, err := os.Open(path.Join(basePath, "config.yml"))
+    f, err := os.Open(configPath)
     if err != nil {
         log.Fatal(err)
     }
@@ -54,24 +70,15 @@ func readYmlConfig(cfg *config) {
 func initConfig() config {
     err := godotenv.Load(path.Join(basePath, ".env"))
     if err != nil {
-        log.Fatal(err)
+        logger.ERROR.Println("Error loading .env file")
     }
 
     var cfg config
     readYmlConfig(&cfg)
+    cfg.Dirs.IgnoreMap = stringToMap(cfg.Dirs.IgnoreStr)
+    cfg.Files.VideoExtMap = stringToMap(cfg.Files.VideoExtStr)
 
-    cfg.Dirs = directories{
-        Input: os.Getenv("INPUT_DIR"),
-        Output: os.Getenv("OUTPUT_DIR"),
-        Temp: os.Getenv("TEMP_DIR"),
-        Ignore: stringToMap(os.Getenv("IGNORE_DIRS")),
-    }
-    cfg.Files = files{
-        DotFiles: os.Getenv("DOT_FILES") == "1",
-        TargetExts: stringToMap(os.Getenv("TARGET_EXT")),
-    }
-    logger.INFO.Printf("Config: %v\n", cfg)
-
+    logger.INFO.Printf("%+v\n", cfg)
     return cfg
 }
 var Config = initConfig()

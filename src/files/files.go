@@ -12,69 +12,71 @@ import (
 var logger = logging.Logger
 var cfg = config.Config
 
-func WalkAndDo(path string, doForFile func(string), doForDir func(string) error) error {
-    ignore := cfg.Dirs.Ignore
-    targets := cfg.Files.TargetExts
-    err := filepath.Walk(config.Config.Dirs.Input, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-            logger.ERROR.Printf("Error when walking through the directory: %v\n", err)
-			return nil
-		}
+func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(string) error) error {
+    maxDepth := cfg.Dirs.MaxDepth
+    ignore := cfg.Dirs.IgnoreMap
+    dots := cfg.Files.DotFiles
 
-        // ignore dot files
-        if !cfg.Files.DotFiles && strings.HasPrefix(filepath.Base(path), ".") {
-            logger.INFO.Printf("Skipping dot file: %v\n", path)
-            if info.IsDir() {
-                return filepath.SkipDir
-            }
-            return nil
-        }
-
-        if info.IsDir() {
-            if ignore[filepath.Base(path)] {
-                logger.INFO.Printf("Skipping directory: %v\n", path)
-                return filepath.SkipDir
-            }
-            return doForDir(path)
-        }
-
-        ext := filepath.Ext(path)
-        if len(ext) > 0 && targets[ext[1:]] {
-            logger.INFO.Printf("Processing file: %v\n", path)
-            doForFile(path)
-        }
-
-		return nil
-	})
-    return err
-}
-
-func GetTargetFile(file string) (string, error) {
-    // get relative path from input dir
-    origBase := cfg.Dirs.Input
-    rel, err := filepath.Rel(origBase, file)
-    if err != nil {
-        logger.ERROR.Printf("Error when getting relative path for %v: %v\n", file, err)
-        return "", err
+    ignoreDot := func(path string) bool {
+        return !dots && strings.HasPrefix(filepath.Base(path), ".")
     }
 
-    // change extension to .gif
-    ext := filepath.Ext(file)
-    base := strings.TrimSuffix(rel, ext)
-    rel = base + ".gif"
+    var walk func(string, int)
+    walk = func(dir string, depth int) {
+        if ignoreDot(dir) {
+            logger.INFO.Printf("Skipping dot directory: %v\n", dir)
+            return
+        }
+        if ignore[filepath.Base(dir)] {
+            logger.INFO.Printf("Skipping ignored directory: %v\n", dir)
+            return
+        }
+        if depth > maxDepth {
+            doForLeafDir(dir)
+            return
+        }
 
-    // join with output dir
-    targetBase := cfg.Dirs.Output
-    return filepath.Join(targetBase, rel), nil
+        // process this dir
+        err := doForDir(dir)
+        if err != nil {
+            return
+        }
+
+        files, err := os.ReadDir(dir)
+        if err != nil {
+            logger.ERROR.Printf("Error when reading directory: %v\n", err)
+            return
+        }
+
+        // directory contents
+        for _, file := range files {
+            // descend into subdirs
+            dir := filepath.Join(dir, file.Name())
+            if file.IsDir() {
+                walk(dir, depth + 1)
+                continue
+            }
+
+            // process files
+            ext := filepath.Ext(dir)
+            if !ignoreDot(file.Name()) && len(ext) > 0 && cfg.Files.VideoExtMap[ext[1:]] {
+                doForFile(dir)
+            }
+        }
+
+        return
+    }
+    walk(root, 0)
+    return nil
 }
 
-func MkTargetDir(dir string) error {
+func MkTargetDir(dir string) (string, error) {
     // get relative path from input dir
     origBase := cfg.Dirs.Input
     rel, err := filepath.Rel(origBase, dir)
     if err != nil {
         logger.ERROR.Printf("Error when getting relative path for %v: %v\n", dir, err)
-        return err
+        return "", err
     }
 
     // join with output dir
@@ -82,15 +84,18 @@ func MkTargetDir(dir string) error {
     targetDir := filepath.Join(targetBase, rel)
     if _, err := os.Stat(targetDir); err == nil {
         // dir exists, done
-        return nil
+        logger.INFO.Printf("Target dir already exists: %v\n", targetDir)
+        return targetDir, nil
     }
 
     // create dir
+    logger.INFO.Printf("Creating target dir: %v\n", targetDir)
     err = os.MkdirAll(targetDir, os.ModePerm)
     if err != nil {
         logger.ERROR.Printf("Error when creating target dir %v: %v\n", targetDir, err)
-        return err
+        return targetDir, err
     }
 
-    return nil
+    return targetDir, nil
 }
+
