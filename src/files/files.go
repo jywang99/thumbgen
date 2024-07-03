@@ -2,6 +2,7 @@ package files
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -111,6 +112,21 @@ func MkTargetDir(dir string) (string, error) {
     }
 
     return targetDir, nil
+}
+
+func MkTmpDir(fileNm string) (string, error) {
+    tmpDir := path.Join(config.Config.Dirs.Temp, path.Base(fileNm))
+
+    err := os.RemoveAll(tmpDir)
+    if err != nil {
+        return "", err
+    }
+
+    err = os.Mkdir(tmpDir, 0755)
+    if err != nil {
+        return "", err
+    }
+    return tmpDir, nil
 }
 
 func GetBaseName(path string, ext bool) string {

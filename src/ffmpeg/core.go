@@ -29,27 +29,33 @@ func (vid *FfVideo) getDuration() (float64, error) {
         return 0, err
     }
 
+    // cache
     vid.duration = res
     return res, nil
 }
 
 // example: fmpeg -i /mnt/f/aaa/bbb.mp4 -ss 00:00:00 -t 5 -vf "fps=20,scale=320:-1:flags=lanczos" -c:v pam -f image2pipe - | convert -delay 2 -loop 0 - range1.gif
 func (vid *FfVideo) genGif(output string, start float64) error {
-    logger.INFO.Println("Generating gif for", vid.Path, "to", output, "starting at", start)
-    cmd := exec.Command("sh", "-c",
-        strings.Join([]string{
-            "ffmpeg", 
-            "-i", fmt.Sprintf("'%s'", vid.Path),
-            "-ss", strconv.FormatFloat(start, 'f', 0, 64), 
-            "-t", strconv.FormatFloat(vid.cfg.CutDuration, 'f', 0, 64), 
-            "-vf", "fps=" + strconv.Itoa(vid.cfg.Fps) + ",scale=" + strconv.Itoa(vid.cfg.ScaleWidth) + ":" + strconv.Itoa(vid.cfg.ScaleHeight) + ":flags=lanczos", 
-            "-c:v", "pam", "-f", "image2pipe", "-",
-            "|", "magick", "-delay", "2", "-loop", "0", "-", fmt.Sprintf("'%s'", output)}, " "))
-    _, err := execCmd(cmd)
+    logger.INFO.Printf("Generating gif to %v starting at %v\n", output, start)
+
+    // commands
+    ffCmd := exec.Command(
+        "ffmpeg", 
+        "-i", vid.Path,
+        "-ss", strconv.FormatFloat(start, 'f', 0, 64), 
+        "-t", strconv.FormatFloat(vid.cfg.CutDuration, 'f', 0, 64), 
+        "-vf", "fps=" + strconv.Itoa(vid.cfg.Fps) + ",scale=" + strconv.Itoa(vid.cfg.ScaleWidth) + ":" + strconv.Itoa(vid.cfg.ScaleHeight) + ":flags=lanczos", 
+        "-c:v", "pam", "-f", "image2pipe", "-",
+    )
+    mgkCmd := exec.Command("magick", "-delay", "2", "-loop", "0", "-", output)
+
+    // pipe together and execute
+    err := execPipeCmd(ffCmd, mgkCmd)
     if err != nil {
-        logger.ERROR.Println("genGif command error")
+        logger.ERROR.Printf("genGif command error. Executed command:\n\t%v | %v\n", ffCmd.String(), mgkCmd.String())
         return err
     }
+
     return nil
 }
 

@@ -43,7 +43,7 @@ func (vid *FfVideo) GenPreviewGif() error {
     logger.INFO.Println("Generating preview gif for", vid.Path, "to", outFile)
 
     // make tmp dir
-    tmpDir, err := mkTmpDir(vid.Path)
+    tmpDir, err := files.MkTmpDir(vid.Path)
     defer os.RemoveAll(tmpDir)
     if err != nil {
         return err

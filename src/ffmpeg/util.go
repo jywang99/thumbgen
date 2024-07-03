@@ -1,12 +1,12 @@
 package ffmpeg
 
 import (
+	"bytes"
+	"io"
 	"log"
 	"os"
 	"os/exec"
-	"path"
 
-	"jy.org/videop/src/config"
 	"jy.org/videop/src/logging"
 )
 
@@ -26,21 +26,6 @@ func getCuts(duration, cutlen float64, maxCuts int) []float64 {
     return cuts
 }
 
-func mkTmpDir(fileNm string) (string, error) {
-    tmpDir := path.Join(config.Config.Dirs.Temp, path.Base(fileNm))
-
-    err := os.RemoveAll(tmpDir)
-    if err != nil {
-        return "", err
-    }
-
-    err = os.Mkdir(tmpDir, 0755)
-    if err != nil {
-        return "", err
-    }
-    return tmpDir, nil
-}
-
 func execCmd(cmd *exec.Cmd) ([]byte, error) {
     out, err := cmd.CombinedOutput()
     if err != nil {
@@ -50,4 +35,44 @@ func execCmd(cmd *exec.Cmd) ([]byte, error) {
         return nil, err
     }
     return out, nil
+}
+
+func execPipeCmd(c1, c2 *exec.Cmd) error {
+    r, w := io.Pipe() 
+    c1.Stdout = w
+    c2.Stdin = r
+
+    var b2 bytes.Buffer
+    c2.Stdout = &b2
+
+    if err := c1.Start(); err != nil {
+        logger.ERROR.Printf("c1.Start() failed: %s\n", err)
+        return err
+    }
+    if err := c2.Start(); err != nil {
+        logger.ERROR.Printf("c2.Start() failed: %s\n", err)
+        return err
+    }
+
+    if err := c1.Wait(); err != nil {
+        logger.ERROR.Printf("c1.Wait() failed: %s\n", err)
+        return err
+    }
+
+    if err := w.Close(); err != nil {
+        logger.ERROR.Printf("w.Close() failed: %s\n", err)
+        return err
+    }
+
+    if err := c2.Wait(); err != nil {
+        logger.ERROR.Printf("c2.Wait() failed: %s\n", err)
+        return err
+    }
+
+    if _, err := io.Copy(os.Stdout, &b2); err != nil {
+        logger.ERROR.Printf("io.Copy failed: %s\n", err)
+        return err
+    }
+
+    return nil
 }
