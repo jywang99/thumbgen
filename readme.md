@@ -57,28 +57,23 @@ files:
 ```
 Then the script will generate the following thumbnails:
 ```
-/soft/video-prep/work/out/
-    folder1/
-        video1.mp4/
-            video1.png
-            video1.gif
-        video2.mp4/
-            video2.png
-            video2.gif
-        images1/
-            images1.png - randomly selected from image1.jpg and image2.jpg
-            images1.gif - contains both image1.jpg and image2.jpg
+/soft/video-prep/work/out/ - level 0
+    folder1/ - level 1
+        video1.png
+        video1.gif
+        video2.png
+        video2.gif
+        images1.png - randomly selected from image1.jpg and image2.jpg, originally in images1/
+        images1.gif - gif cycling through both image1.jpg and image2.jpg
     folder2/
-        video3.mp4
-            video3.jpg
-            video3.gif
-        videos1/
-            videos1.png
-            videos1.gif
+        video3.jpg
+        video3.gif
+        videos1.png
+        videos1.gif
     folder3/
-        mixture/
-            mixture.png - randomly selected from image3, image4, image5, and cutscenes from video5, video6, video7
-            mixture.gif - can contain randomly selected cutscenes from video5, video6, video7, and/or image3, image4, image5
+        mixture.png - randomly selected from image3, image4, image5, and cutscenes from video5, video6, video7
+        mixture.gif - can contain randomly selected cutscenes from video5, video6, video7, and/or image3, image4, image5
 ```
+Each directory/file inside the level 1 directory (I call them leaf nodes) produce one gif + one png.\
 **NOTE**: The `ffmpeg.maxCuts` specifies how many cutscenes a gif can contain. An image occupies half of the `ffmpeg.cutDuration`. Thus, specifying `maxCuts: 5` will generate a gif with 10 images if all the selected cutscenes are images.
 

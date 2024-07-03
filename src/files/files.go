@@ -70,7 +70,7 @@ func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(
     return nil
 }
 
-func MkTargetDir(dir string) (string, error) {
+func GetTargetDir(dir string, strip bool) (string, error) {
     // get relative path from input dir
     origBase := cfg.Dirs.Input
     rel, err := filepath.Rel(origBase, dir)
@@ -79,11 +79,25 @@ func MkTargetDir(dir string) (string, error) {
         return "", err
     }
 
+    // strip last filename/dirname
+    if strip {
+        rel = filepath.Dir(rel)
+    }
+
     // join with output dir
     targetBase := cfg.Dirs.Output
     targetDir := filepath.Join(targetBase, rel)
+    return targetDir, nil
+}
+
+func MkTargetDir(dir string) (string, error) {
+    targetDir, err := GetTargetDir(dir, false)
+    if err != nil {
+        return targetDir, err
+    }
+
+    // check if dir exists
     if _, err := os.Stat(targetDir); err == nil {
-        // dir exists, done
         logger.INFO.Printf("Target dir already exists: %v\n", targetDir)
         return targetDir, nil
     }
@@ -97,5 +111,13 @@ func MkTargetDir(dir string) (string, error) {
     }
 
     return targetDir, nil
+}
+
+func GetBaseName(path string, ext bool) string {
+    base := filepath.Base(path)
+    if !ext {
+        return strings.TrimSuffix(base, filepath.Ext(base))
+    }
+    return base
 }
 
