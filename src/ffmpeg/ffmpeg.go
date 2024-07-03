@@ -5,8 +5,8 @@ import (
 	"path"
 	"strconv"
 
-	"jy.org/videop/src/config"
-	"jy.org/videop/src/files"
+	"jy.org/thumbgen/src/config"
+	"jy.org/thumbgen/src/files"
 )
 
 type Ffmpeg struct {

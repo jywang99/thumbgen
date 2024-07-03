@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"jy.org/videop/src/config"
-	"jy.org/videop/src/logging"
+	"jy.org/thumbgen/src/config"
+	"jy.org/thumbgen/src/logging"
 )
 
 var logger = logging.Logger

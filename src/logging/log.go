@@ -1,8 +1,11 @@
 package logging
 
 import (
+	"io"
 	"log"
 	"os"
+
+	"jy.org/thumbgen/src/config"
 )
 
 type logger struct {
@@ -12,10 +15,16 @@ type logger struct {
 }
 
 func initLoggers() *logger {
+    logFile, err := os.OpenFile(config.Config.Log.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    flags := log.LstdFlags | log.Lshortfile
     return &logger{
-        ERROR: log.New(os.Stderr, "ERROR:", log.LstdFlags),
-        WARN: log.New(os.Stdout, "WARN:", log.LstdFlags),
-        INFO: log.New(os.Stdout, "INFO:", log.LstdFlags),
+        ERROR: log.New(io.MultiWriter(os.Stderr, logFile), "ERROR:", flags),
+        WARN: log.New(io.MultiWriter(os.Stdout, logFile), "WARN:", flags),
+        INFO: log.New(io.MultiWriter(os.Stdout, logFile), "INFO:", flags),
     }
 }
 

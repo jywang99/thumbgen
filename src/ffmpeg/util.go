@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"jy.org/videop/src/logging"
+	"jy.org/thumbgen/src/logging"
 )
 
 var logger = logging.Logger

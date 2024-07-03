@@ -6,12 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
-	"jy.org/videop/src/logging"
 )
-
-var logger = logging.Logger
 
 type directories struct {
     Input string `yaml:"input"`
@@ -39,10 +35,15 @@ type FfmpegCfg struct {
     Fps int `yaml:"fps"`
 }
 
+type LogCfg struct {
+    LogPath string `yaml:"file"`
+}
+
 type config struct {
     Ffmpeg FfmpegCfg `yaml:"ffmpeg"`
     Dirs directories `yaml:"directories"`
     Files files `yaml:"files"`
+    Log LogCfg `yaml:"logging"`
 }
 
 var basePath = "/soft/video-prep/config/"
@@ -68,17 +69,11 @@ func readYmlConfig(cfg *config) {
 }
 
 func initConfig() config {
-    err := godotenv.Load(path.Join(basePath, ".env"))
-    if err != nil {
-        logger.ERROR.Println("Error loading .env file")
-    }
-
     var cfg config
     readYmlConfig(&cfg)
     cfg.Dirs.IgnoreMap = stringToMap(cfg.Dirs.IgnoreStr)
     cfg.Files.VideoExtMap = stringToMap(cfg.Files.VideoExtStr)
 
-    logger.INFO.Printf("%+v\n", cfg)
     return cfg
 }
 var Config = initConfig()

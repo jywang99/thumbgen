@@ -1,10 +1,10 @@
 package main
 
 import (
-	"jy.org/videop/src/config"
-	"jy.org/videop/src/ffmpeg"
-	"jy.org/videop/src/files"
-	"jy.org/videop/src/logging"
+	"jy.org/thumbgen/src/config"
+	"jy.org/thumbgen/src/ffmpeg"
+	"jy.org/thumbgen/src/files"
+	"jy.org/thumbgen/src/logging"
 )
 
 var logger = logging.Logger
@@ -14,11 +14,12 @@ func main() {
     logger.INFO.Println("Start of the program")
 
     cfg := config.Config
+    logger.INFO.Printf("Config: %+v\n", cfg)
     ff := ffmpeg.NewFfmpeg(cfg.Ffmpeg)
 
     err := files.WalkAndDo(cfg.Dirs.Input, 
     func(file string) {
-        logger.INFO.Printf("[Generation start] source: %v\n", file)
+        logger.INFO.Printf("[Generation start] source: %v\n", file) // TODO no log when skipped
 
         // get target dir
         tdir, err := files.GetTargetDir(file, true)
