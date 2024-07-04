@@ -4,8 +4,7 @@ import (
 	"jy.org/thumbgen/src/config"
 	"jy.org/thumbgen/src/files"
 	"jy.org/thumbgen/src/logging"
-	"jy.org/thumbgen/src/process/directory"
-	"jy.org/thumbgen/src/process/ffmpeg"
+	"jy.org/thumbgen/src/process"
 )
 
 var logger = logging.Logger
@@ -16,7 +15,6 @@ func main() {
 
     cfg := config.Config
     logger.INFO.Printf("Config: %+v\n", cfg)
-    ff := ffmpeg.NewFfmpeg(&cfg.Ffmpeg)
 
     err := files.WalkAndDo(cfg.Dirs.Input, 
     func(file string) {
@@ -29,7 +27,7 @@ func main() {
         }
 
         // generate gif
-        vid := ff.NewFfVideo(file, tdir)
+        vid := process.NewVideo(file, tdir)
         err = vid.GenPreviewGif()
         if err != nil {
             logger.ERROR.Printf("[Generation end][ERROR] %v\n", err)
@@ -54,14 +52,20 @@ func main() {
             return
         }
 
-        dirp, err := directory.NewDirProcessor(dir, ff, tdir)
+        dirp, err := process.NewDirProcessor(dir, tdir)
         if err != nil {
             logger.ERROR.Printf("[Generation end][ERROR] Error when creating directory processor: %v\n", err)
             return
         }
         err = dirp.GenPreviewGif()
         if err != nil {
-            logger.ERROR.Printf("[Generation end][ERROR] Error when processing directory: %v\n", err)
+            logger.ERROR.Printf("[Generation end][ERROR] Error when generating gif for directory: %v\n", err)
+            return
+        }
+
+        err = dirp.GenPreviewImg()
+        if err != nil {
+            logger.ERROR.Printf("[Generation end][ERROR] Error when generating png for directory: %v\n", err)
             return
         }
 

@@ -3,10 +3,10 @@ ffmpeg:
   cutDuration: 3 # duration in seconds for each cut
   maxCuts: 5 # max number of cuts per video (segments in gif)
   scaleWidth: 320
-  scaleHeight: -1 # keep aspect ratio
+  scaleHeight: 240
   fps: 20 # frames per second
 directories:
-  input: /mnt/f
+  input: /soft/video-prep/work/in
   output: /soft/video-prep/work/out
   temp: /soft/video-prep/work/tmp
   ignore: $RECYCLE.BIN:System Volume Information:.Trashes:.fseventsd:.Spotlight-V100:thumbs:models

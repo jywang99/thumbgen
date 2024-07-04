@@ -1,37 +1,24 @@
-package ffmpeg
+package cli
 
 import (
 	"bytes"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 
+	"jy.org/thumbgen/src/config"
 	"jy.org/thumbgen/src/logging"
 )
 
 var logger = logging.Logger
-
-// list of cut start points
-// evenly distribute cuts
-func getCuts(duration, cutlen float64, maxCuts int) []float64 {
-    cuts := make([]float64, 0)
-    for i := 0; i < maxCuts; i++ {
-        start := float64(i) * duration / float64(maxCuts)
-        if len(cuts) > 0 && cuts[len(cuts) - 1] + cutlen > start {
-            continue
-        }
-        cuts = append(cuts, start)
-    }
-    return cuts
-}
+var cfg = config.Config.Ffmpeg
 
 func execCmd(cmd *exec.Cmd) ([]byte, error) {
     out, err := cmd.CombinedOutput()
     if err != nil {
-        log.Printf("Error when executing command: %v\n", cmd.String())
-        log.Printf("stderr: %v\n", err)
-        log.Printf("stdout: %v\n", string(out))
+        logger.ERROR.Printf("Error when executing command: %v\n", cmd.String())
+        logger.ERROR.Printf("stderr: %v\n", err)
+        logger.ERROR.Printf("stdout: %v\n", string(out))
         return nil, err
     }
     return out, nil

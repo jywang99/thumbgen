@@ -1,4 +1,4 @@
-package ffmpeg
+package process
 
 import (
 	"errors"
@@ -7,34 +7,26 @@ import (
 	"path"
 	"strconv"
 
-	"jy.org/thumbgen/src/config"
 	"jy.org/thumbgen/src/files"
+	"jy.org/thumbgen/src/process/cli"
 )
 
-type Ffmpeg struct {
-    cfg *config.FfmpegCfg
-}
+var ffcfg = cfg.Ffmpeg
 
-func NewFfmpeg(cfg *config.FfmpegCfg) *Ffmpeg {
-    return &Ffmpeg{cfg: cfg}
-}
-
-type FfVideo struct {
+type Video struct {
     Path string
     TargetDir string
     duration float64
-    cfg *config.FfmpegCfg
 }
 
-func (ff Ffmpeg) NewFfVideo(fpath, tdir string) *FfVideo {
-    return &FfVideo{
-        Path: fpath,
-        TargetDir: tdir,
-        cfg: ff.cfg,
+func NewVideo(path string, targetDir string) *Video {
+    return &Video{
+        Path: path,
+        TargetDir: targetDir,
     }
 }
 
-func (vid *FfVideo) GenPreviewGif() error {
+func (vid *Video) GenPreviewGif() error {
     // example: /mnt/f/aaa/bbb.mp4 -> /mnt/f/aaa/bbb.gif
     outFile := path.Join(vid.TargetDir, files.GetBaseName(vid.Path, false) + ".gif")
     if _, err := os.Stat(outFile); err == nil {
@@ -52,30 +44,28 @@ func (vid *FfVideo) GenPreviewGif() error {
     }
 
     // get duration
-    duration, err := vid.GetDuration()
+    duration, err := vid.getDuration()
     if err != nil {
         return err
     }
 
     // get cut start points
-    starts := getCuts(duration, vid.cfg.CutDuration, vid.cfg.MaxCuts)
+    starts := vid.getCuts()
     if len(starts) == 0 {
         return errors.New(fmt.Sprintf("No cuts could be made for %v, duration: %v", vid.Path, duration))
     }
 
     // get gifs for each cut, save in tmp dir
-    gifs := make([]string, len(starts))
     for i, start := range starts {
         gif := path.Join(tmpDir, "range" + strconv.Itoa(i) + ".gif")
-        err := vid.GenGif(gif, start)
+        err := cli.GenGif(vid.Path, gif, start)
         if err != nil {
             return err
         }
-        gifs[i] = gif
     }
 
     // combine gifs
-    err = CombineGifs(gifs, outFile)
+    err = cli.CombineGifs(tmpDir, outFile)
     if err != nil {
         return err
     }
@@ -84,8 +74,8 @@ func (vid *FfVideo) GenPreviewGif() error {
     return nil
 }
 
-func (vid *FfVideo) GenPreviewImg() error {
-    // example: /mnt/f/aaa/bbb.mp4 -> /mnt/f/aaa/bbb.png
+func (vid *Video) GenPreviewImg() error {
+    // example: /mnt/f/aaa/bbb.mp4 -> /mnt/g/aaa/bbb.png
     outFile := path.Join(vid.TargetDir, files.GetBaseName(vid.Path, false) + ".png")
     if _, err := os.Stat(outFile); err == nil {
         logger.INFO.Printf("Preview png already exists for %v: %v\n", vid.Path, outFile)
@@ -95,14 +85,42 @@ func (vid *FfVideo) GenPreviewImg() error {
     logger.INFO.Println("Generating preview img for", vid.Path, "to", outFile)
 
     // generate img at half duration
-    dur, err := vid.GetDuration()
+    dur, err := vid.getDuration()
     if err != nil {
         return err
     }
     snapTime := dur / 2
-    vid.GenImg(outFile, snapTime)
-
-    return nil
+    return cli.GetVidFrame(vid.Path, outFile, snapTime)
 }
 
-// TODO move to outside package
+func (vid *Video) getDuration() (float64, error) {
+    // already got duration
+    if vid.duration != 0 {
+        return vid.duration, nil
+    }
+
+    // get duration
+    dur, err := cli.GetVidDuration(vid.Path)
+    if err != nil {
+        return 0, err
+    }
+
+    vid.duration = dur
+    return dur, nil
+}
+
+// list of cut start points
+// evenly distribute cuts
+func (vid *Video) getCuts() []float64 {
+    dur, _ := vid.getDuration()
+    cuts := make([]float64, 0)
+    for i := 0; i < ffcfg.MaxCuts; i++ {
+        start := float64(i) * dur / float64(ffcfg.MaxCuts)
+        if len(cuts) > 0 && cuts[len(cuts) - 1] + ffcfg.CutDuration > start {
+            continue
+        }
+        cuts = append(cuts, start)
+    }
+    return cuts
+}
+

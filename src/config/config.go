@@ -73,6 +73,7 @@ func initConfig() config {
     readYmlConfig(&cfg)
     cfg.Dirs.IgnoreMap = stringToMap(cfg.Dirs.IgnoreStr)
     cfg.Files.VideoExtMap = stringToMap(cfg.Files.VideoExtStr)
+    cfg.Files.ImageExtMap = stringToMap(cfg.Files.ImageExtStr)
 
     return cfg
 }
