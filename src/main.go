@@ -18,7 +18,7 @@ func main() {
 
     err := files.WalkAndDo(cfg.Dirs.Input, 
     func(file string) {
-        logger.INFO.Printf("[Generation start] source: %v\n", file) // TODO no log when skipped
+        logger.INFO.Printf("[Generation start] source: %v\n", file)
 
         // get target dir
         tdir, err := files.GetTargetDir(file, true)

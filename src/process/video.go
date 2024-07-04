@@ -50,7 +50,7 @@ func (vid *Video) GenPreviewGif() error {
     }
 
     // get cut start points
-    starts := vid.getCuts()
+    starts := getCuts(duration)
     if len(starts) == 0 {
         return errors.New(fmt.Sprintf("No cuts could be made for %v, duration: %v", vid.Path, duration))
     }
@@ -107,20 +107,5 @@ func (vid *Video) getDuration() (float64, error) {
 
     vid.duration = dur
     return dur, nil
-}
-
-// list of cut start points
-// evenly distribute cuts
-func (vid *Video) getCuts() []float64 {
-    dur, _ := vid.getDuration()
-    cuts := make([]float64, 0)
-    for i := 0; i < ffcfg.MaxCuts; i++ {
-        start := float64(i) * dur / float64(ffcfg.MaxCuts)
-        if len(cuts) > 0 && cuts[len(cuts) - 1] + ffcfg.CutDuration > start {
-            continue
-        }
-        cuts = append(cuts, start)
-    }
-    return cuts
 }
 

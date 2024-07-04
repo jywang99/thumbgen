@@ -17,7 +17,7 @@ type DirProcessor struct{
 
 func NewDirProcessor(dir string, tdir string) (*DirProcessor, error) {
     // scan source dir
-    exp, err := files.NewExplorer(dir)
+    exp, err := files.NewExplorer(dir) // TODO check if target file exists before creating explorer
     if err != nil {
         return nil, err
     }
@@ -89,22 +89,68 @@ func (dp *DirProcessor) getTargetFile(ext string) string {
 }
 
 func (dp *DirProcessor) genGifFromVideos(tmpDir, outFile string) error {
-    // generate gif for each video
-    // process at most MaxCuts videos
-    vids := dp.exp.VidFiles
-    i := 0
-    for i<cfg.Ffmpeg.MaxCuts && i<len(vids) { // TODO multiple cuts from a single video, if not enough videos
-        vpath := vids[i]
+    // at most MaxCuts videos
+    vids := dp.exp.VidFiles[:min(cfg.Ffmpeg.MaxCuts, len(dp.exp.VidFiles))]
+
+    // all possible cuts for each video
+    type vidCut struct {
+        path string
+        cuts []float64
+        npos int
+    }
+    vidCuts := make([]*vidCut, 0)
+    for _, vpath := range vids {
+        // duration
         dur, err := cli.GetVidDuration(vpath)
         if err != nil {
             continue
         }
-        gif := path.Join(tmpDir, fmt.Sprintf("range%v.gif", i))
-        err = cli.GenGif(vpath, gif, dur/2) // TODO case: duration too short
-        if err != nil {
+
+        // cuts
+        cuts := getCuts(dur)
+        if len(cuts) == 0 {
             continue
         }
-        i ++
+        vidCuts = append(vidCuts, &vidCut{
+            path: vpath,
+            cuts: cuts,
+            npos: 0,
+        })
+    }
+
+    // remaining videos that have unused cuts
+    valids := len(vidCuts)
+    if valids == 0 {
+        return fmt.Errorf("No valid cuts found for videos in %v", dp.exp.Dir)
+    }
+
+    // generate gifs
+    gifCnt := 0
+    // stop when reach MaxCuts or no more cuts
+    for gifCnt < cfg.Ffmpeg.MaxCuts && valids > 0 {
+        // look at videos one by one, generate gif for the next cut
+        for i, vc := range vidCuts {
+            // no more cuts for this video
+            if vc.npos >= len(vc.cuts) {
+                valids --
+                continue
+            }
+
+            // name is important for order when combining
+            gif := path.Join(tmpDir, fmt.Sprintf("vid%v_range%v.gif", i, vc.npos))
+            err := cli.GenGif(vc.path, gif, vc.cuts[vc.npos])
+            if err != nil {
+                vc.npos ++
+                continue
+            }
+            vc.npos ++
+
+            // got enough gifs
+            gifCnt ++
+            if gifCnt == cfg.Ffmpeg.MaxCuts {
+                break
+            }
+        }
     }
 
     // combine gifs
@@ -112,7 +158,7 @@ func (dp *DirProcessor) genGifFromVideos(tmpDir, outFile string) error {
 }
 
 func (dp *DirProcessor) genGifFromImages(tmpDir, outFile string) error {
-    // resize images to tmp dir
+    // resize images, put to tmp dir
     imgs := dp.exp.ImgFiles
     i := 0
     for i<cfg.Ffmpeg.MaxCuts*2 && i<len(imgs) {
