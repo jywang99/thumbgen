@@ -2,9 +2,10 @@ package main
 
 import (
 	"jy.org/thumbgen/src/config"
-	"jy.org/thumbgen/src/ffmpeg"
 	"jy.org/thumbgen/src/files"
 	"jy.org/thumbgen/src/logging"
+	"jy.org/thumbgen/src/process/directory"
+	"jy.org/thumbgen/src/process/ffmpeg"
 )
 
 var logger = logging.Logger
@@ -15,7 +16,7 @@ func main() {
 
     cfg := config.Config
     logger.INFO.Printf("Config: %+v\n", cfg)
-    ff := ffmpeg.NewFfmpeg(cfg.Ffmpeg)
+    ff := ffmpeg.NewFfmpeg(&cfg.Ffmpeg)
 
     err := files.WalkAndDo(cfg.Dirs.Input, 
     func(file string) {
@@ -48,13 +49,21 @@ func main() {
         logger.INFO.Printf("[Generation start] source: %v/\n", dir)
 
         // get target dir
-        _, err := files.GetTargetDir(dir, true)
+        tdir, err := files.GetTargetDir(dir, true)
         if err != nil {
             return
         }
 
-        // TODO generate gif
-        // TODO generate img
+        dirp, err := directory.NewDirProcessor(dir, ff, tdir)
+        if err != nil {
+            logger.ERROR.Printf("[Generation end][ERROR] Error when creating directory processor: %v\n", err)
+            return
+        }
+        err = dirp.GenPreviewGif()
+        if err != nil {
+            logger.ERROR.Printf("[Generation end][ERROR] Error when processing directory: %v\n", err)
+            return
+        }
 
         logger.INFO.Printf("[Generation end][ok]")
     }, 

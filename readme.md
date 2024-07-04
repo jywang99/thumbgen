@@ -4,6 +4,10 @@
 Generate thumbnails for video files and image folders in a directory recursively.
 Use case: websites serving video and image contents
 
+## Dependencies
+1. [FFmpeg](https://ffmpeg.org/)
+2. [ImageMagick](https://imagemagick.org/index.php)
+
 ## Features
 1. Generate thumbnails (1 image, 1 gif) for each video file in the directory
 2. Generate the same thumbnails for each image folder in the directory

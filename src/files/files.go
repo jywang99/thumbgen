@@ -7,29 +7,14 @@ import (
 	"strings"
 
 	"jy.org/thumbgen/src/config"
-	"jy.org/thumbgen/src/logging"
 )
-
-var logger = logging.Logger
-var cfg = config.Config
 
 func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(string) error) error {
     maxDepth := cfg.Dirs.MaxDepth
-    ignore := cfg.Dirs.IgnoreMap
-    dots := cfg.Files.DotFiles
-
-    ignoreDot := func(path string) bool {
-        return !dots && strings.HasPrefix(filepath.Base(path), ".")
-    }
 
     var walk func(string, int)
     walk = func(dir string, depth int) {
-        if ignoreDot(dir) {
-            logger.INFO.Printf("Skipping dot directory: %v\n", dir)
-            return
-        }
-        if ignore[filepath.Base(dir)] {
-            logger.INFO.Printf("Skipping ignored directory: %v\n", dir)
+        if ignoreEntry(dir) {
             return
         }
         if depth > maxDepth {
@@ -58,9 +43,9 @@ func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(
                 continue
             }
 
-            // process files
+            // process video files
             ext := filepath.Ext(dir)
-            if !ignoreDot(file.Name()) && len(ext) > 0 && cfg.Files.VideoExtMap[ext[1:]] {
+            if !ignoreEntry(file.Name()) && len(ext) > 0 && cfg.Files.VideoExtMap[ext[1:]] {
                 doForFile(dir)
             }
         }

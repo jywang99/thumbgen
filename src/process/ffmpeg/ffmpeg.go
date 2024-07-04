@@ -1,6 +1,8 @@
 package ffmpeg
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -10,10 +12,10 @@ import (
 )
 
 type Ffmpeg struct {
-    cfg config.FfmpegCfg
+    cfg *config.FfmpegCfg
 }
 
-func NewFfmpeg(cfg config.FfmpegCfg) *Ffmpeg {
+func NewFfmpeg(cfg *config.FfmpegCfg) *Ffmpeg {
     return &Ffmpeg{cfg: cfg}
 }
 
@@ -28,7 +30,7 @@ func (ff Ffmpeg) NewFfVideo(fpath, tdir string) *FfVideo {
     return &FfVideo{
         Path: fpath,
         TargetDir: tdir,
-        cfg: &ff.cfg,
+        cfg: ff.cfg,
     }
 }
 
@@ -50,17 +52,22 @@ func (vid *FfVideo) GenPreviewGif() error {
     }
 
     // get duration
-    duration, err := vid.getDuration()
+    duration, err := vid.GetDuration()
     if err != nil {
         return err
     }
 
-    // get gifs for each cut, save in tmp dir
+    // get cut start points
     starts := getCuts(duration, vid.cfg.CutDuration, vid.cfg.MaxCuts)
+    if len(starts) == 0 {
+        return errors.New(fmt.Sprintf("No cuts could be made for %v, duration: %v", vid.Path, duration))
+    }
+
+    // get gifs for each cut, save in tmp dir
     gifs := make([]string, len(starts))
     for i, start := range starts {
         gif := path.Join(tmpDir, "range" + strconv.Itoa(i) + ".gif")
-        err := vid.genGif(gif, start)
+        err := vid.GenGif(gif, start)
         if err != nil {
             return err
         }
@@ -68,7 +75,7 @@ func (vid *FfVideo) GenPreviewGif() error {
     }
 
     // combine gifs
-    err = vid.combineGifs(gifs, outFile)
+    err = CombineGifs(gifs, outFile)
     if err != nil {
         return err
     }
@@ -88,13 +95,14 @@ func (vid *FfVideo) GenPreviewImg() error {
     logger.INFO.Println("Generating preview img for", vid.Path, "to", outFile)
 
     // generate img at half duration
-    dur, err := vid.getDuration()
+    dur, err := vid.GetDuration()
     if err != nil {
         return err
     }
     snapTime := dur / 2
-    vid.genImg(outFile, snapTime)
+    vid.GenImg(outFile, snapTime)
 
     return nil
 }
 
+// TODO move to outside package
