@@ -35,11 +35,11 @@ func GenGif(input string, output string, start float64) error {
         "ffmpeg", 
         "-i", input,
         "-ss", strconv.FormatFloat(start, 'f', 0, 64), 
-        "-t", strconv.FormatFloat(cfg.CutDuration, 'f', 0, 64), 
+        "-t", strconv.FormatFloat(cfg.CutDuration, 'f', 0, 64),
         "-vf", "fps=" + strconv.Itoa(cfg.Fps) + ",scale=-1:" + strconv.Itoa(cfg.ScaleHeight) + ":flags=lanczos", 
         "-c:v", "pam", "-f", "image2pipe", "-",
     )
-    mgkCmd := exec.Command("magick", "-delay", "2", "-loop", "0", "-", output)
+    mgkCmd := exec.Command("magick", "-delay", strconv.Itoa(100 / cfg.Fps), "-loop", "0", "-", output)
 
     // pipe together and execute
     err := execPipeCmd(ffCmd, mgkCmd)

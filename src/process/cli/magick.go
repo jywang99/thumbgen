@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"os/exec"
 	"path"
+	"strconv"
 )
 
 // example: magick -delay 5 -loop 0 range1.gif range2.gif combined.gif
 func CombineGifs(srcDir, output string) error {
     logger.INFO.Println("Combining gifs to", output)
     cmd := exec.Command(
-        "magick", 
+        "magick", path.Join(srcDir, "*"),
         "-delay", "5",
         "-loop", "0",
-        path.Join(srcDir, "*"),
+        "-resize", fmt.Sprintf("%dx%d", cfg.ScaleWidth, cfg.ScaleHeight),
+        "-gravity", "center",
+        "-background", "black",
+        "-extent", fmt.Sprintf("%dx%d", cfg.ScaleWidth, cfg.ScaleHeight),
         output,
     )
     _, err := execCmd(cmd)
@@ -51,7 +55,7 @@ func ImagesToGif(srcDir string, output string) error {
     logger.INFO.Println("Converting images to ", output)
     cmd := exec.Command(
         "magick", 
-        "-delay", "100", // TODO config
+        "-delay", strconv.FormatFloat(cfg.CutDuration / 2 * 100, 'f', 0, 64),
         "-loop", "0",
         path.Join(srcDir, "*"),
         output,

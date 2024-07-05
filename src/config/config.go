@@ -46,7 +46,7 @@ type config struct {
     Log LogCfg `yaml:"logging"`
 }
 
-var basePath = "/soft/video-prep/config/"
+var basePath = "/soft/video-prep/config/" // TODO no hardcoding
 var configPath = path.Join(basePath, "config.yml")
 
 func readYmlConfig(cfg *config) {

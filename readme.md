@@ -5,8 +5,8 @@ Generate thumbnails for video files and image folders in a directory recursively
 Use case: websites serving video and image contents
 
 ## Dependencies
-1. [FFmpeg](https://ffmpeg.org/)
-2. [ImageMagick](https://imagemagick.org/index.php)
+1. [FFmpeg](https://ffmpeg.org/) - version n7.0.1
+2. [ImageMagick](https://imagemagick.org/index.php) - Version: ImageMagick 7.1.1-34 Q16-HDRI x86_64 22301
 
 ## Features
 1. Generate thumbnails (1 image, 1 gif) for each video file in the directory
@@ -14,7 +14,6 @@ Use case: websites serving video and image contents
 
 ## Usage
 1. Write the configuration file. Example: [config.json](conf/config.yml)
-    a. (TODO)
 2. Run the script (TODO build)
 
 ## Example
