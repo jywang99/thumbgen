@@ -16,6 +16,7 @@ files:
   videoExt: mp4:mkv:avi:mov:wmv:webm
   imageExt: jpg:jpeg:png:gif:webp
   dotfiles: false
+  index: /soft/video-prep/work/out/index.txt
 logging:
   file: /soft/video-prep/log/video-prep.log
 

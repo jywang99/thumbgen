@@ -9,7 +9,7 @@ import (
 	"jy.org/thumbgen/src/config"
 )
 
-func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(string) error) error {
+func WalkAndDo(root string, process func(string, bool), doForDir func(string) error) error {
     maxDepth := cfg.Dirs.MaxDepth
 
     var walk func(string, int)
@@ -18,8 +18,8 @@ func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(
             return
         }
         if depth > maxDepth {
-            doForLeafDir(dir)
-            return
+            process(dir, true)
+            return 
         }
 
         // process this dir
@@ -37,20 +37,18 @@ func WalkAndDo(root string, doForFile, doForLeafDir func(string), doForDir func(
         // directory contents
         for _, file := range files {
             // descend into subdirs
-            dir := filepath.Join(dir, file.Name())
+            pth := filepath.Join(dir, file.Name())
             if file.IsDir() {
-                walk(dir, depth + 1)
+                walk(pth, depth + 1)
                 continue
             }
 
             // process video files
-            ext := filepath.Ext(dir)
+            ext := filepath.Ext(pth)
             if !ignoreEntry(file.Name()) && len(ext) > 0 && cfg.Files.VideoExtMap[ext[1:]] {
-                doForFile(dir)
+                process(pth, false)
             }
         }
-
-        return
     }
     walk(root, 0)
     return nil
@@ -120,5 +118,10 @@ func GetBaseName(path string, ext bool) string {
         return strings.TrimSuffix(base, filepath.Ext(base))
     }
     return base
+}
+
+func CheckFileExists(path string) bool {
+    _, err := os.Stat(path)
+    return err == nil
 }
 

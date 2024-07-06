@@ -24,6 +24,7 @@ type files struct {
     ImageExtStr string `yaml:"imageExt"`
     ImageExtMap map[string]bool
     DotFiles bool `yaml:"dotfiles"`
+    Index string `yaml:"index"`
 }
 
 type FfmpegCfg struct {
@@ -68,14 +69,14 @@ func readYmlConfig(cfg *config) {
     }
 }
 
-func initConfig() config {
+func initConfig() *config {
     var cfg config
     readYmlConfig(&cfg)
     cfg.Dirs.IgnoreMap = stringToMap(cfg.Dirs.IgnoreStr)
     cfg.Files.VideoExtMap = stringToMap(cfg.Files.VideoExtStr)
     cfg.Files.ImageExtMap = stringToMap(cfg.Files.ImageExtStr)
 
-    return cfg
+    return &cfg
 }
 var Config = initConfig()
 

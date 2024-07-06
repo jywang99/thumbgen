@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 
 	"jy.org/thumbgen/src/files"
 	"jy.org/thumbgen/src/process/cli"
@@ -12,27 +11,20 @@ import (
 
 type DirProcessor struct{
     exp *files.Explorer
-    TargetDir string
 }
 
-func NewDirProcessor(dir string, tdir string) (*DirProcessor, error) {
+func NewDirProcessor(dir string) (*DirProcessor, error) {
     // scan source dir
-    exp, err := files.NewExplorer(dir) // TODO check if target file exists before creating explorer
+    exp, err := files.NewExplorer(dir)
     if err != nil {
         return nil, err
     }
     return &DirProcessor{
         exp: exp,
-        TargetDir: tdir,
     }, nil
 }
 
-func (dp *DirProcessor) GenPreviewGif() error {
-    outFile := dp.getTargetFile("gif")
-    if _, err := os.Stat(outFile); err == nil {
-        return nil
-    }
-
+func (dp *DirProcessor) GenPreviewGif(outFile string) error {
     vidCnt := dp.exp.GetFileCount(files.Video)
     imgCnt := dp.exp.GetFileCount(files.Image)
 
@@ -55,12 +47,7 @@ func (dp *DirProcessor) GenPreviewGif() error {
     return dp.genGifFromImages(tmpDir, outFile)
 }
 
-func (dp *DirProcessor) GenPreviewImg() error {
-    outFile := dp.getTargetFile("png")
-    if _, err := os.Stat(outFile); err == nil {
-        return nil
-    }
-
+func (dp *DirProcessor) GenPreviewImg(outFile string) error {
     vidCnt := dp.exp.GetFileCount(files.Video)
     imgCnt := dp.exp.GetFileCount(files.Image)
 
@@ -82,10 +69,6 @@ func (dp *DirProcessor) GenPreviewImg() error {
         return err
     }
     return cli.GetVidFrame(vpath, outFile, dur/2)
-}
-
-func (dp *DirProcessor) getTargetFile(ext string) string {
-    return path.Join(dp.TargetDir, fmt.Sprintf("%v.%v", filepath.Base(dp.exp.Dir), ext))
 }
 
 func (dp *DirProcessor) genGifFromVideos(tmpDir, outFile string) error {

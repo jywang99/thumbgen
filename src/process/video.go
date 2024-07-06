@@ -15,25 +15,16 @@ var ffcfg = cfg.Ffmpeg
 
 type Video struct {
     Path string
-    TargetDir string
     duration float64
 }
 
-func NewVideo(path string, targetDir string) *Video {
+func NewVideo(path string) *Video {
     return &Video{
         Path: path,
-        TargetDir: targetDir,
     }
 }
 
-func (vid *Video) GenPreviewGif() error {
-    // example: /mnt/f/aaa/bbb.mp4 -> /mnt/f/aaa/bbb.gif
-    outFile := path.Join(vid.TargetDir, files.GetBaseName(vid.Path, false) + ".gif")
-    if _, err := os.Stat(outFile); err == nil {
-        logger.INFO.Printf("Preview gif already exists for %v: %v\n", vid.Path, outFile)
-        return nil
-    }
-
+func (vid *Video) GenPreviewGif(outFile string) error {
     logger.INFO.Println("Generating preview gif for", vid.Path, "to", outFile)
 
     // make tmp dir
@@ -74,14 +65,7 @@ func (vid *Video) GenPreviewGif() error {
     return nil
 }
 
-func (vid *Video) GenPreviewImg() error {
-    // example: /mnt/f/aaa/bbb.mp4 -> /mnt/g/aaa/bbb.png
-    outFile := path.Join(vid.TargetDir, files.GetBaseName(vid.Path, false) + ".png")
-    if _, err := os.Stat(outFile); err == nil {
-        logger.INFO.Printf("Preview png already exists for %v: %v\n", vid.Path, outFile)
-        return nil
-    }
-
+func (vid *Video) GenPreviewImg(outFile string) error {
     logger.INFO.Println("Generating preview img for", vid.Path, "to", outFile)
 
     // generate img at half duration
