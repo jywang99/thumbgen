@@ -13,7 +13,7 @@ type Indexer struct{
 func NewIndexer(path string) (*Indexer, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644) // overwrite if exists
 	if err != nil {
-        logger.ERROR.Printf("Error when opening file: %v\n", err)
+        logger.ERROR.Printf("Error when opening index file: %v\n", err)
 		return nil, err
 	}
 
@@ -28,7 +28,7 @@ func (idx *Indexer) WriteLine(line string) error {
     if err != nil {
         logger.ERROR.Printf("Error when writing line: %v\n", err)
     }
-    return err
+    return idx.writer.Flush() // TODO if SIGTERM is handled, flush might not be necessary for each line
 }
 
 func (idx *Indexer) Close() {

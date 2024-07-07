@@ -14,7 +14,15 @@ Use case: websites serving video and image contents
 
 ## Usage
 1. Write the configuration file. Example: [config.json](conf/config.yml)
-2. Run the script (TODO build)
+2. Build
+```bash
+go build -o bin/thumbgen ./src
+```
+3. Run \
+Replace `conf/config.yml` with the path to your configuration file.
+```bash
+./bin/thumbgen -f conf/config.yml
+```
 
 ## Example
 Let's say we have the following directory structure for our `directories.input`:
