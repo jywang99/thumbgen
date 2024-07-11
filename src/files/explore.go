@@ -40,15 +40,15 @@ func (e *Explorer) getFiles() error {
         }
 
         // no extension
-        ext := filepath.Ext(path)
+        ext := getExt(path)
         if ext == "" {
             return nil
         }
 
         // add to list depending on file type
-        if vidExts[ext[1:]] {
+        if vidExts[ext] {
             e.VidFiles = append(e.VidFiles, path)
-        } else if imgExts[ext[1:]] {
+        } else if imgExts[ext] {
             e.ImgFiles = append(e.ImgFiles, path)
         }
 

@@ -27,3 +27,11 @@ func ignoreEntry(path string) bool {
     return false
 }
 
+func getExt(path string) string {
+    ext := filepath.Ext(path)
+    if ext == "" {
+        return ""
+    }
+    return strings.ToLower(ext[1:])
+}
+

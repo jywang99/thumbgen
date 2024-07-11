@@ -61,7 +61,10 @@ func doForLeaf(file string, isDir bool) {
     }
     if err != nil {
         logger.ERROR.Printf("[Generation end][ERROR] Error processing: %v\n", err)
+        return
     }
+
+    logger.INFO.Printf("[Generation end][ok]")
 }
 
 func processFile(file, outGif, outImg string) error {

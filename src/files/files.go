@@ -44,7 +44,7 @@ func WalkAndDo(root string, process func(string, bool), doForDir func(string) er
             }
 
             // process video files
-            ext := filepath.Ext(pth)
+            ext := getExt(file.Name())
             if !ignoreEntry(file.Name()) && len(ext) > 0 && cfg.Files.VideoExtMap[ext[1:]] {
                 process(pth, false)
             }
